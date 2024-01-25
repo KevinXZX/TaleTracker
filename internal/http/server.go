@@ -3,10 +3,10 @@ package http
 import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"html/template"
 	"net/http"
 	"strings"
 	"taletracker.com/internal/http/handler"
+	"taletracker.com/internal/view"
 )
 
 type TaleServer struct {
@@ -18,10 +18,14 @@ type TaleConfig struct {
 	AllowedOrigins  []string
 }
 
-func (t *TaleServer) Start() {
+func (t *TaleServer) Start() error {
 	t.echo = echo.New()
+	templates, err := view.ParseTemplates()
+	if err != nil {
+		return err
+	}
 	t.echo.Renderer = &handler.Template{
-		Templates: template.Must(template.ParseGlob("../../internal/view/*.html")),
+		Templates: templates,
 	}
 	t.echo.Pre(middleware.RemoveTrailingSlash())
 	t.echo.Use(middleware.LoggerWithConfig(middleware.DefaultLoggerConfig))
@@ -47,6 +51,7 @@ func (t *TaleServer) Start() {
 	}))
 	t.echo.GET("/home", handler.Home)
 	t.echo.Logger.Fatal(t.echo.Start(":1323"))
+	return nil
 }
 
 func isAPI(c echo.Context) bool {
