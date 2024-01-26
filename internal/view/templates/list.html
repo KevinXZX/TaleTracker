@@ -1,0 +1,33 @@
+{{define "list"}}
+    <head>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    </head>
+<h1> Tales List </h1>
+<table>
+    <tr>
+        <th>Title</th>
+        <th>Author</th>
+        <th>Description</th>
+        <th>Rating</th>
+    </tr>
+    {{range .}}
+    <tr>
+        <td>{{.Title}}</td>
+        <td>{{.Author}}</td>
+        <td>{{.Blurb}}</td>
+        <td>
+            {{ range $i := until .Rating }}
+                {{ range $i, $rating := seq .Rating }}
+                    {{ if lt $i $rating }}
+                         <span class="fa fa-star text-orange-500"></span>
+                    {{ else }}
+                        <span class="fa fa-star text-white-500"></span>
+                    {{end}}
+                {{ end }}
+            {{end}}
+        </td>
+    </tr>
+    {{end}}
+</table>
+{{end}}

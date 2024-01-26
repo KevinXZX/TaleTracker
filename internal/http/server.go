@@ -49,7 +49,10 @@ func (t *TaleServer) Start() error {
 		AllowMethods:     []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete},
 		AllowCredentials: false,
 	}))
+	//TODO: One Handler for UI (including login)
+	//      one handler for API. This handler includes an auth middleware which either checks for cookies or a bearer token
 	t.echo.GET("/home", handler.Home)
+	t.echo.GET("/:user/list", handler.List)
 	t.echo.Logger.Fatal(t.echo.Start(":1323"))
 	return nil
 }
