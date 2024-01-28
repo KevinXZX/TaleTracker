@@ -11,5 +11,9 @@ func main() {
 		DevelopmentMode: false,
 		AllowedOrigins:  []string{"localhost:3000"},
 	}}
-	t.Start()
+	err := t.Start()
+	if err != nil {
+		fmt.Printf("error starting server: %v\n", err)
+	}
+	fmt.Println("Goodbye, world!")
 }

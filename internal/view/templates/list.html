@@ -1,33 +1,40 @@
 {{define "list"}}
-    <head>
-        <script src="https://cdn.tailwindcss.com"></script>
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-    </head>
+<head>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+</head>
 <h1> Tales List </h1>
-<table>
-    <tr>
-        <th>Title</th>
-        <th>Author</th>
-        <th>Description</th>
-        <th>Rating</th>
-    </tr>
-    {{range .}}
-    <tr>
-        <td>{{.Title}}</td>
-        <td>{{.Author}}</td>
-        <td>{{.Blurb}}</td>
-        <td>
-            {{ range $i := until .Rating }}
-                {{ range $i, $rating := seq .Rating }}
-                    {{ if lt $i $rating }}
-                         <span class="fa fa-star text-orange-500"></span>
-                    {{ else }}
-                        <span class="fa fa-star text-white-500"></span>
-                    {{end}}
-                {{ end }}
-            {{end}}
-        </td>
-    </tr>
-    {{end}}
-</table>
+<div class="bg-zinc-800 min-h-screen min-w-screen flex">
+    <div class="text-white mx-auto">
+        <table class="text-white border-separate border-spacing-x-7 table-fixed">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Author</th>
+                    <th>Description</th>
+                    <th>Rating</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .}}
+                <tr>
+                    <td>{{.Title}}</td>
+                    <td>{{.Author}}</td>
+                    <td>{{.Blurb}}</td>
+                    <td>
+                        {{ $rating := .Review.Rating}}
+                        {{ range $i, $e := until 5 }}
+                            {{ if lt $i $rating }}
+                                 <span class="fa fa-star text-orange-500"></span>
+                            {{ else }}
+                                <span class="fa fa-star text-white"></span>
+                            {{end}}
+                        {{end}}
+                    </td>
+                </tr>
+                {{end}}
+            <tbody>
+        </table>
+    </div>
+</div>
 {{end}}
