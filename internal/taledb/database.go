@@ -50,11 +50,60 @@ func (tdb *TaleDatabase) Migrate(dburl string) error {
 	return nil
 }
 func (tdb *TaleDatabase) AddTale(tale model.Tale) error {
-	_, err := tdb.db.Exec("INSERT INTO tales (title, author, url,blurb,published,updated,review_score,review_comment) VALUES ($1, $2, $3, $4,$5,$6,$7,$8)", tale.Title, tale.Author, tale.Url, tale.Blurb, tale.Published, tale.Updated, tale.Review.Rating, tale.Review.Description)
+	tx, err := tdb.db.Begin()
 	if err != nil {
 		return err
 	}
+	defer tx.Rollback()
+	// Add tale to database
+	taleID, err := tdb.addTaleToDB(tx, tale)
+	if err != nil {
+		fmt.Println("Error adding tale to database", err)
+		return err
+	}
+	// Add or create tags
+	for _, tag := range tale.Tags {
+		tagID, err := tdb.addOrCreateTaleTag(tx, tag.Name)
+		if err != nil {
+			return err
+		}
+		// Add tag to tale
+		_, err = tx.Exec("INSERT INTO tales_tags (tale_id,tag_id) VALUES ($1, $2)", taleID, tagID)
+		if err != nil {
+			return err
+		}
+	}
+	tx.Commit()
 	return nil
+}
+
+func (tdb *TaleDatabase) addTaleToDB(tx *sql.Tx, tale model.Tale) (int64, error) {
+	// Add tale to database
+	var taleID int64
+	err := tx.QueryRow("INSERT INTO tales (title, author, url,blurb,published,updated,review_score,review_comment) VALUES ($1, $2, $3, $4,$5,$6,$7,$8) RETURNING id", tale.Title, tale.Author, tale.Url, tale.Blurb, tale.Published, tale.Updated, tale.Review.Rating, tale.Review.Description).Scan(&taleID)
+	if err != nil {
+		return -1, err
+	}
+
+	return taleID, nil
+}
+
+func (tdb *TaleDatabase) addOrCreateTaleTag(tx *sql.Tx, tagName string) (int64, error) {
+	var tagID int64
+
+	// Check if the tag already exists
+	err := tx.QueryRow("SELECT id FROM tags WHERE name = $1", tagName).Scan(&tagID)
+	if err == sql.ErrNoRows {
+		// Tag doesn't exist, so create it
+		err = tx.QueryRow("INSERT INTO tags (name) VALUES ($1) RETURNING id", tagName).Scan(&tagID)
+		if err != nil {
+			return -1, err
+		}
+	} else if err != nil {
+		return -1, err
+	}
+
+	return tagID, nil
 }
 func (tdb *TaleDatabase) GetTales(userID string) ([]model.Tale, error) {
 	rows, err := tdb.db.Query("SELECT id,title, author, url,blurb,added,published,updated,review_score,review_comment FROM tales")
