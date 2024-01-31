@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS tales_tags (
 
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
-    username VARCHAR(255) NOT NULL UNIQUE
+    username VARCHAR(255) NOT NULL UNIQUE,
     password VARCHAR(60) NOT NULL,
     admin BOOLEAN,
     settings_json JSONB
