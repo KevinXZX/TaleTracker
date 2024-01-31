@@ -142,6 +142,23 @@ func (tdb *TaleDatabase) AddTagToTale(taleID int, tags ...model.Tag) error {
 	return nil
 }
 
+func (tdb *TaleDatabase) RemoveTagFromTale(taleID int, tagID int) error {
+	tx, err := tdb.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	// Remove tag from tale
+	_, err = tx.Exec("DELETE FROM tales_tags WHERE tale_id = $1 AND tag_id = $2", taleID, tagID)
+	if err != nil {
+		return err
+	}
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
+	return nil
+}
 func (tdb *TaleDatabase) GetTales() ([]model.Tale, error) {
 	rows, err := tdb.db.Query(`
 		SELECT 

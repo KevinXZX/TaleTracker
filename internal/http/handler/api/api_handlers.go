@@ -12,7 +12,8 @@ func RegisterRoutes(g *echo.Group) string {
 	g.GET("/tale", GetTales)
 	g.POST("/tale", AddTale)
 	g.POST("/tale/:taleID/review", ReviewTale)
-	g.POST("/tale/:taleID/tag", AddTag)
+	g.POST("/tale/:taleID/tag", AddTags)
+	g.DELETE("/tale/:taleID/tag/:tagID", DeleteTags)
 	return "api"
 }
 
@@ -57,7 +58,7 @@ func ReviewTale(c echo.Context) error {
 	}
 	return c.JSON(http.StatusOK, review)
 }
-func AddTag(c echo.Context) error {
+func AddTags(c echo.Context) error {
 	tdb := c.Get("tdb").(*taledb.TaleDatabase)
 	var tags = struct {
 		Tags []model.Tag `json:"tags"`
@@ -76,4 +77,21 @@ func AddTag(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 	return c.JSON(http.StatusOK, tags)
+}
+func DeleteTags(c echo.Context) error {
+	tdb := c.Get("tdb").(*taledb.TaleDatabase)
+	q := c.Param("taleID")
+	taleID, err := strconv.Atoi(q)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, err)
+	}
+	tagID, err := strconv.Atoi(c.Param("tagID"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, err)
+	}
+	err = tdb.RemoveTagFromTale(taleID, tagID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+	return c.JSON(http.StatusOK, "")
 }
