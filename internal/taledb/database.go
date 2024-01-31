@@ -109,6 +109,39 @@ func (tdb *TaleDatabase) addOrCreateTaleTag(tx *sql.Tx, tagName string) (int64, 
 
 	return tagID, nil
 }
+
+func (tdb *TaleDatabase) ReviewTale(taleID int, review model.Review) error {
+	_, err := tdb.db.Exec("UPDATE tales SET review_score = $1, review_comment = $2 WHERE id = $3", review.Rating, review.Description, taleID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (tdb *TaleDatabase) AddTagToTale(taleID int, tags ...model.Tag) error {
+	tx, err := tdb.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	for _, tag := range tags {
+		tagID, err := tdb.addOrCreateTaleTag(tx, tag.Name)
+		if err != nil {
+			return err
+		}
+		// Add tag to tale
+		_, err = tx.Exec("INSERT INTO tales_tags (tale_id,tag_id) VALUES ($1, $2)", taleID, tagID)
+		if err != nil {
+			return err
+		}
+	}
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (tdb *TaleDatabase) GetTales() ([]model.Tale, error) {
 	rows, err := tdb.db.Query(`
 		SELECT 
