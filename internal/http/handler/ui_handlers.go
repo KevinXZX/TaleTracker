@@ -5,7 +5,7 @@ import (
 	"html/template"
 	"io"
 	"net/http"
-	"taletracker.com/internal/database"
+	"taletracker.com/internal/model"
 )
 
 type Template struct {
@@ -21,5 +21,5 @@ func Home(c echo.Context) error {
 }
 
 func List(c echo.Context) error {
-	return c.Render(http.StatusOK, "list", database.GetTales(c.Param("user")))
+	return c.Render(http.StatusOK, "list", []model.Tale{})
 }
