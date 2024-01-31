@@ -15,7 +15,7 @@ func RegisterRoutes(g *echo.Group) string {
 
 func GetTales(c echo.Context) error {
 	tdb := c.Get("tdb").(*taledb.TaleDatabase)
-	tales, err := tdb.GetTales("1")
+	tales, err := tdb.GetTales()
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err)
 	}

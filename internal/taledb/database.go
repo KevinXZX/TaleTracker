@@ -3,6 +3,7 @@ package taledb
 import (
 	"database/sql"
 	"embed"
+	"encoding/json"
 	"fmt"
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
@@ -73,7 +74,10 @@ func (tdb *TaleDatabase) AddTale(tale model.Tale) error {
 			return err
 		}
 	}
-	tx.Commit()
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -105,25 +109,54 @@ func (tdb *TaleDatabase) addOrCreateTaleTag(tx *sql.Tx, tagName string) (int64, 
 
 	return tagID, nil
 }
-func (tdb *TaleDatabase) GetTales(userID string) ([]model.Tale, error) {
-	rows, err := tdb.db.Query("SELECT id,title, author, url,blurb,added,published,updated,review_score,review_comment FROM tales")
+func (tdb *TaleDatabase) GetTales() ([]model.Tale, error) {
+	rows, err := tdb.db.Query(`
+		SELECT 
+			t.id,
+			t.title,
+			t.author,
+			t.url,
+			t.blurb,
+			t.added,
+			t.published,
+			t.updated,
+			t.review_score,
+			t.review_comment,
+			COALESCE(json_agg(DISTINCT tags) FILTER (WHERE tags.id IS NOT NULL), '[]'::json) AS tags
+		FROM tales t
+		LEFT JOIN tales_tags tt ON t.id = tt.tale_id
+		LEFT JOIN tags ON tt.tag_id = tags.id
+		GROUP BY t.id
+	`)
 	if err != nil {
 		return []model.Tale{}, err
 	}
-	fmt.Println("Query successful")
 	defer rows.Close()
+
 	var tales []model.Tale
 	for rows.Next() {
 		var tale model.Tale
-		err = rows.Scan(&tale.ID, &tale.Title, &tale.Author, &tale.Url, &tale.Blurb, &tale.Added, &tale.Published, &tale.Updated, &tale.Review.Rating, &tale.Review.Description)
+		var tagsJSON string
+		err = rows.Scan(&tale.ID, &tale.Title, &tale.Author, &tale.Url, &tale.Blurb, &tale.Added, &tale.Published, &tale.Updated, &tale.Review.Rating, &tale.Review.Description, &tagsJSON)
 		if err != nil {
 			return []model.Tale{}, err
 		}
+
+		// Unmarshal JSON array of tags into []Tag
+		var tags []model.Tag
+		err = json.Unmarshal([]byte(tagsJSON), &tags)
+		if err != nil {
+			return []model.Tale{}, err
+		}
+		tale.Tags = tags
+
 		tales = append(tales, tale)
 	}
+
 	// Check for errors from iterating over rows.
 	if err = rows.Err(); err != nil {
 		return []model.Tale{}, err
 	}
+
 	return tales, nil
 }
